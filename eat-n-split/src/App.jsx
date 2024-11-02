@@ -34,11 +34,13 @@ Button.propTypes = {
   children: PropTypes.node.isRequired,
   onClick: PropTypes.func,
 };
-
 export default function App() {
   const [friends, setFriends] = useState(initialFriends);
   const [showAddFriend, setShowAddFriend] = useState(false);
   const [selectedFriend, setSelectedFriend] = useState(null);
+
+  // Calculate the total balance
+  const totalBalance = friends.reduce((acc, friend) => acc + friend.balance, 0);
 
   function handleShowAddFriend() {
     setShowAddFriend((show) => !show);
@@ -53,13 +55,33 @@ export default function App() {
     setSelectedFriend((cur) => (cur?.id === friend.id ? null : friend));
     setShowAddFriend(false);
   }
+
+  // Delete friend from the list
+  function handleDeleteFriend(id) {
+    setFriends((friends) => friends.filter((friend) => friend.id !== id));
+    setSelectedFriend(null);
+  }
+
+  // Edit friend's details
+  function handleEditFriend(updatedFriend) {
+    setFriends((friends) =>
+      friends.map((friend) =>
+        friend.id === updatedFriend.id ? updatedFriend : friend
+      )
+    );
+    setSelectedFriend(updatedFriend);
+  }
+
   return (
     <div className="app">
       <div className="sidebar">
+        <h2>Total Balance: ${totalBalance}</h2>
         <FriendList
           friends={friends}
           onSelection={handleSelection}
           selectedFriend={selectedFriend}
+          onDeleteFriend={handleDeleteFriend}
+          onEditFriend={handleEditFriend}
         />
 
         {showAddFriend && <FormAddFriend onAddFriend={handleAddFriend} />}
@@ -73,7 +95,13 @@ export default function App() {
   );
 }
 
-function FriendList({ friends, onSelection, selectedFriend }) {
+function FriendList({
+  friends,
+  onSelection,
+  selectedFriend,
+  onDeleteFriend,
+  onEditFriend,
+}) {
   return (
     <ul>
       {friends.map((friend) => (
@@ -82,49 +110,76 @@ function FriendList({ friends, onSelection, selectedFriend }) {
           key={friend.id}
           onSelection={onSelection}
           selectedFriend={selectedFriend}
+          onDeleteFriend={onDeleteFriend}
+          onEditFriend={onEditFriend}
         />
       ))}
     </ul>
   );
 }
 
-FriendList.propTypes = {
-  friends: PropTypes.arrayOf(
-    PropTypes.shape({
-      id: PropTypes.number.isRequired,
-      name: PropTypes.string.isRequired,
-      image: PropTypes.string.isRequired,
-      balance: PropTypes.number.isRequired,
-    })
-  ).isRequired,
-};
-function Friend({ friend, onSelection, selectedFriend }) {
-  const isSelected = selectedFriend?.id === friend.id; // strict equality
+function Friend({
+  friend,
+  onSelection,
+  selectedFriend,
+  onDeleteFriend,
+  onEditFriend,
+}) {
+  const isSelected = selectedFriend?.id === friend.id;
+  const [isEditing, setIsEditing] = useState(false);
+  const [editName, setEditName] = useState(friend.name);
+  const [editImage, setEditImage] = useState(friend.image);
+
+  function handleEditSubmit(e) {
+    e.preventDefault();
+    const updatedFriend = { ...friend, name: editName, image: editImage };
+    onEditFriend(updatedFriend);
+    setIsEditing(false);
+  }
+
   return (
     <li className={isSelected ? "selected" : ""}>
       <img src={friend.image} alt={`Profile picture of ${friend.name}`} />
-      <h3>{friend.name}</h3>
-      {friend.balance < 0 && (
-        <p className="red">
-          You owe {friend.name} ${Math.abs(friend.balance)}
-        </p>
-      )}
-      {friend.balance > 0 && (
-        <p className="green">
-          {friend.name} owes you ${Math.abs(friend.balance)}
-        </p>
-      )}
-      {friend.balance === 0 && <p>You and {friend.name} are even</p>}
+      {isEditing ? (
+        <form onSubmit={handleEditSubmit}>
+          <input
+            type="text"
+            value={editName}
+            onChange={(e) => setEditName(e.target.value)}
+          />
+          <input
+            type="text"
+            value={editImage}
+            onChange={(e) => setEditImage(e.target.value)}
+          />
+          <Button>Save</Button>
+        </form>
+      ) : (
+        <>
+          <h3>{friend.name}</h3>
+          {friend.balance < 0 && (
+            <p className="red">
+              You owe {friend.name} ${Math.abs(friend.balance)}
+            </p>
+          )}
+          {friend.balance > 0 && (
+            <p className="green">
+              {friend.name} owes you ${Math.abs(friend.balance)}
+            </p>
+          )}
+          {friend.balance === 0 && <p>You and {friend.name} are even</p>}
 
-      <Button
-        onClick={() => onSelection(friend)}
-        aria-label="Toggle friend selection"
-      >
-        {isSelected ? "Close" : "Select"}
-      </Button>
+          <Button onClick={() => onSelection(friend)}>
+            {isSelected ? "Close" : "Select"}
+          </Button>
+          <Button onClick={() => setIsEditing(true)}>Edit</Button>
+          <Button onClick={() => onDeleteFriend(friend.id)}>Delete</Button>
+        </>
+      )}
     </li>
   );
 }
+
 Friend.propTypes = {
   friend: PropTypes.shape({
     id: PropTypes.number.isRequired,
