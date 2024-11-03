@@ -1,9 +1,13 @@
-Eat-n-split
+*Eat-n-split
+
 
 
 This is a simple React application designed to manage and split bills with friends. Users can add friends, edit and delete friend details, and calculate expenses to maintain a balance of what is owed or owed to them.
 
-Features
+
+
+*Features
+
 
 
 Add Friends: Easily add new friends by providing a name and image URL.
@@ -17,7 +21,10 @@ Balance Tracking: Keep track of debts with each friend.
 Bill Splitting: Split bills with selected friends and adjust the balance accordingly.
 
 
-Tech Stack
+
+
+*Tech Stack
+
 
 React: For building user interfaces and managing component state.
 
@@ -25,7 +32,10 @@ PropTypes: Used to validate props passed between components for data integrity.
 
 
 
-Components Overview
+
+
+*Components Overview
+
 
 App: The main component that holds the state and renders child components.
 
@@ -39,12 +49,12 @@ FormAddFriend: A form for adding new friends.
 
 FormSplitBill: A form to enter bill information and calculate the split with a selected friend.
 
-
 Prop Validation: Each component utilizes PropTypes to ensure accurate prop validation for enhanced reliability.
 
 
 
-Usage
+
+*Usage
 Add a Friend:
 
 Click the "Add Friend" button.
