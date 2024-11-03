@@ -34,12 +34,12 @@ Button.propTypes = {
   children: PropTypes.node.isRequired,
   onClick: PropTypes.func,
 };
+
 export default function App() {
   const [friends, setFriends] = useState(initialFriends);
   const [showAddFriend, setShowAddFriend] = useState(false);
   const [selectedFriend, setSelectedFriend] = useState(null);
 
-  // Calculate the total balance
   const totalBalance = friends.reduce((acc, friend) => acc + friend.balance, 0);
 
   function handleShowAddFriend() {
@@ -56,13 +56,22 @@ export default function App() {
     setShowAddFriend(false);
   }
 
-  // Delete friend from the list
+  function handleSplitBill(value) {
+    setFriends((friends) =>
+      friends.map((friend) =>
+        friend.id === selectedFriend.id
+          ? { ...friend, balance: friend.balance + value }
+          : friend
+      )
+    );
+    setSelectedFriend(null);
+  }
+
   function handleDeleteFriend(id) {
     setFriends((friends) => friends.filter((friend) => friend.id !== id));
     setSelectedFriend(null);
   }
 
-  // Edit friend's details
   function handleEditFriend(updatedFriend) {
     setFriends((friends) =>
       friends.map((friend) =>
@@ -90,10 +99,19 @@ export default function App() {
           {showAddFriend ? "Close" : "Add Friend"}
         </Button>
       </div>
-      {selectedFriend && <FormSplitBill selectedFriend={selectedFriend} />}
+      {selectedFriend && (
+        <FormSplitBill
+          selectedFriend={selectedFriend}
+          onSplitBill={handleSplitBill}
+        />
+      )}
     </div>
   );
 }
+
+App.propTypes = {
+  initialFriends: PropTypes.array,
+};
 
 function FriendList({
   friends,
@@ -117,6 +135,26 @@ function FriendList({
     </ul>
   );
 }
+
+FriendList.propTypes = {
+  friends: PropTypes.arrayOf(
+    PropTypes.shape({
+      id: PropTypes.number.isRequired,
+      name: PropTypes.string.isRequired,
+      image: PropTypes.string.isRequired,
+      balance: PropTypes.number.isRequired,
+    })
+  ).isRequired,
+  onSelection: PropTypes.func.isRequired,
+  selectedFriend: PropTypes.shape({
+    id: PropTypes.number,
+    name: PropTypes.string,
+    image: PropTypes.string,
+    balance: PropTypes.number,
+  }),
+  onDeleteFriend: PropTypes.func.isRequired,
+  onEditFriend: PropTypes.func.isRequired,
+};
 
 function Friend({
   friend,
@@ -187,6 +225,15 @@ Friend.propTypes = {
     image: PropTypes.string.isRequired,
     balance: PropTypes.number.isRequired,
   }).isRequired,
+  onSelection: PropTypes.func.isRequired,
+  selectedFriend: PropTypes.shape({
+    id: PropTypes.number,
+    name: PropTypes.string,
+    image: PropTypes.string,
+    balance: PropTypes.number,
+  }),
+  onDeleteFriend: PropTypes.func.isRequired,
+  onEditFriend: PropTypes.func.isRequired,
 };
 
 function FormAddFriend({ onAddFriend }) {
@@ -238,13 +285,20 @@ FormAddFriend.propTypes = {
   onAddFriend: PropTypes.func.isRequired,
 };
 
-function FormSplitBill({ selectedFriend }) {
+function FormSplitBill({ selectedFriend, onSplitBill }) {
   const [bill, setBill] = useState("");
   const [paidByUser, setPaidByUser] = useState("");
   const paidByFriend = bill ? bill - paidByUser : "";
   const [whoIsPaying, setWhoIsPaying] = useState("user");
+
+  function handleSubmit(e) {
+    e.preventDefault();
+    if (!bill || !paidByUser) return;
+    onSplitBill(whoIsPaying === "user" ? paidByFriend : -paidByUser);
+  }
+
   return (
-    <form className="form-split-bill">
+    <form className="form-split-bill" onSubmit={handleSubmit}>
       <h2>Split a bill with {selectedFriend.name}</h2>
 
       <label>💰 Bill value</label>
@@ -265,10 +319,10 @@ function FormSplitBill({ selectedFriend }) {
         }
       />
 
-      <label>👨🏿‍🤝‍👨🏼{selectedFriend.name} expense</label>
-      <input type="text" value={paidByFriend} disabled />
+      <label>👨🏿‍🤝‍👨🏼 {selectedFriend.name}'s expense</label>
+      <input type="text" disabled value={paidByFriend} />
 
-      <label>💰 Who is paying the bill?</label>
+      <label>🤑 Who is paying the bill?</label>
       <select
         value={whoIsPaying}
         onChange={(e) => setWhoIsPaying(e.target.value)}
@@ -281,3 +335,13 @@ function FormSplitBill({ selectedFriend }) {
     </form>
   );
 }
+
+FormSplitBill.propTypes = {
+  selectedFriend: PropTypes.shape({
+    id: PropTypes.number.isRequired,
+    name: PropTypes.string.isRequired,
+    image: PropTypes.string.isRequired,
+    balance: PropTypes.number.isRequired,
+  }).isRequired,
+  onSplitBill: PropTypes.func.isRequired,
+};
